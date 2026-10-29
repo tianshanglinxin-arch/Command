@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050805">
+<meta name="description" content="HACKER TERMINAL X - Browser-based public information tools and safe fictional security simulations.">
+<title>HACKER TERMINAL X</title>
+<style>
+:root{color-scheme:dark;--bg:#050805;--panel:#0a100b;--line:#1b4425;--green:#57ff79;--muted:#83a98b;--white:#d8f7dd;--red:#ff6565;--yellow:#ffd76a}
+*{box-sizing:border-box}
+html{min-height:100%;background:var(--bg)}
+body{margin:0;background:radial-gradient(ellipse at top,#102116 0%,#050805 52%);color:var(--white);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;min-height:100vh}
+button,input{font:inherit}
+button{cursor:pointer}
+a{color:var(--green);overflow-wrap:anywhere}
+.shell{max-width:1050px;margin:0 auto;padding:16px 12px calc(22px + env(safe-area-inset-bottom))}
+header{border:1px solid var(--line);background:rgba(7,15,8,.9);padding:18px;border-radius:12px;box-shadow:0 0 28px #19ff4b0b}
+.brandline{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-size:clamp(20px,5vw,32px);font-weight:900;letter-spacing:.07em;color:var(--green);text-shadow:0 0 16px #38ff6955}
+.tag{font-size:11px;border:1px solid var(--line);color:var(--muted);padding:5px 8px;border-radius:5px}
+.subtitle{color:var(--muted);font-size:12px;margin-top:8px;line-height:1.6}
+.statusbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.status{font-size:11px;color:var(--green);border:1px solid #245932;background:#0b1b0f;padding:6px 8px;border-radius:5px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:12px}
+.panel{border:1px solid var(--line);border-radius:10px;background:rgba(8,14,9,.94);overflow:hidden}
+.panelhead{padding:10px 13px;border-bottom:1px solid var(--line);font-size:12px;color:var(--green);letter-spacing:.08em;display:flex;justify-content:space-between;gap:10px}
+.terminal{padding:13px}
+.output{height:min(48vh,440px);min-height:240px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55;font-size:12px;scrollbar-color:#245932 #071008}
+.line{margin:0 0 7px}
+.line.good{color:var(--white)}.line.info{color:var(--muted)}.line.warn{color:var(--yellow)}.line.error{color:var(--red)}.line.cmd{color:var(--green)}
+.promptrow{display:flex;gap:9px;align-items:center;border-top:1px solid #17351f;padding-top:12px;margin-top:8px}
+.prompt{color:var(--green);font-weight:800;white-space:nowrap}
+#command{min-width:0;flex:1;background:transparent;border:0;outline:none;color:#e1ffe5;font-size:16px;padding:8px 0;caret-color:var(--green)}
+#command::placeholder{color:#52745a}
+.run{background:#102c17;border:1px solid #2b7b3d;color:var(--green);padding:9px 14px;border-radius:6px;font-weight:800}
+.run:active,.quick button:active{background:#1b4726}
+.quick{display:flex;flex-wrap:wrap;gap:7px;padding:0 13px 13px}
+.quick button{border:1px solid #23472b;background:#0a160d;color:#a7eeb3;border-radius:6px;padding:8px 10px;font-size:11px}
+.twocol{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+.info{padding:13px;font-size:12px;line-height:1.7;color:var(--muted)}
+.info strong{color:var(--green)}
+.cmdlist{display:grid;grid-template-columns:1fr;gap:7px;padding:12px}
+.cmditem{display:flex;gap:12px;align-items:flex-start;border:1px solid #152e1b;border-radius:6px;padding:8px}
+.cmditem code{color:var(--green);min-width:100px;overflow-wrap:anywhere}
+.cmditem span{font-size:11px;color:var(--muted);line-height:1.5}
+footer{text-align:center;font-size:10px;color:#52745a;padding:18px 8px 0;line-height:1.7}
+.hidden{display:none}
+@media(min-width:720px){.shell{padding:24px 18px}.layout{grid-template-columns:minmax(0,1fr) 280px}.output{height:470px}.twocol{grid-template-columns:1fr 1fr}.cmdlist{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+  <div class="brandline"><div class="brand">HACKER TERMINAL X</div><div class="tag">BROWSER-BASED TOOLKIT / v1.0</div></div>
+  <div class="subtitle">公開情報ツール ＋ ローカル環境情報 ＋ 安全なセキュリティ演習</div>
+  <div class="statusbar"><span class="status">● TERMINAL READY</span><span class="status">NO ACCOUNT</span><span class="status">NO PAID API</span><span class="status" id="clock">LOCAL TIME --:--:--</span></div>
+</header>
+
+<div class="layout">
+<section class="panel">
+  <div class="panelhead"><span>CONSOLE / COMMAND LINE</span><span id="lineCount">0 LINES</span></div>
+  <div class="terminal">
+    <div id="output" class="output" role="log" aria-live="polite" aria-label="ターミナル出力"></div>
+    <form id="commandForm" class="promptrow" autocomplete="off">
+      <label class="prompt" for="command">root@htx:~$</label>
+      <input id="command" name="command" type="text" placeholder="help と入力..." autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-label="コマンド入力">
+      <button class="run" type="submit">RUN</button>
+    </form>
+  </div>
+  <div class="quick" aria-label="コマンドショートカット">
+    <button type="button" data-cmd="help">HELP</button>
+    <button type="button" data-cmd="sysinfo">SYSINFO</button>
+    <button type="button" data-cmd="ip 8.8.8.8">IP CHECK</button>
+    <button type="button" data-cmd="dns example.com">DNS LOOKUP</button>
+    <button type="button" data-cmd="scan">DEMO SCAN</button>
+    <button type="button" data-cmd="history">HISTORY</button>
+    <button type="button" data-cmd="clear">CLEAR</button>
+  </div>
+</section>
+
+<aside class="panel">
+  <div class="panelhead"><span>COMMAND INDEX</span><span>LOCAL</span></div>
+  <div class="cmdlist">
+    <div class="cmditem"><code>help</code><span>コマンド一覧を表示</span></div>
+    <div class="cmditem"><code>ip &lt;address&gt;</code><span>IPv4 / IPv6形式を検証</span></div>
+    <div class="cmditem"><code>dns &lt;domain&gt;</code><span>公開DNS over HTTPSを照会</span></div>
+    <div class="cmditem"><code>whois &lt;domain&gt;</code><span>登録情報の検索ページを開く</span></div>
+    <div class="cmditem"><code>domain &lt;domain&gt;</code><span>ドメインの形式を検証</span></div>
+    <div class="cmditem"><code>sysinfo</code><span>ブラウザの公開可能な環境情報</span></div>
+    <div class="cmditem"><code>scan</code><span>架空環境の防御シミュレーション</span></div>
+    <div class="cmditem"><code>history</code><span>このページ内の入力履歴</span></div>
+    <div class="cmditem"><code>date</code><span>現在の端末時刻</span></div>
+    <div class="cmditem"><code>calc 12*8</code><span>安全な四則演算</span></div>
+    <div class="cmditem"><code>analyze &lt;text&gt;</code><span>文字数・頻出文字などを分析</span></div>
+    <div class="cmditem"><code>clear</code><span>出力欄をクリア</span></div>
+  </div>
+</aside>
+</div>
+
+<div class="twocol">
+  <section class="panel"><div class="panelhead">REAL DATA / 実データ</div><div class="info">DNS照会は公開DNS over HTTPSサービスへ問い合わせます。ネットワークやブラウザの制限、サービス停止などで取得できない場合があります。<br><br><strong>注意：</strong>IPアドレスの形式検証は、所有者・現在地・稼働状況の特定ではありません。WHOISは外部検索ページを開きます。</div></section>
+  <section class="panel"><div class="panelhead">SIMULATION / 演習データ</div><div class="info">scanコマンドは架空のローカル演習です。外部IPやサーバーをスキャンしません。表示されるイベント・スコア・脅威はすべてデモ用であり、実機の検査結果ではありません。</div></section>
+</div>
+<footer>HACKER TERMINAL X · HTML / CSS / JavaScript · GitHub Pages compatible<br>外部への通信はDNS照会コマンド実行時のみ。コマンド履歴はページを閉じると消えます。</footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+const output = $('output'), form = $('commandForm'), input = $('command');
+const history = [];
+let historyCursor = 0, renderedLines = 0;
+const MAX_LINES = 350;
+
+function print(text, type='good'){
+  const div = document.createElement('div');
+  div.className = 'line ' + type;
+  div.textContent = String(text);
+  output.appendChild(div);
+  renderedLines++;
+  while(output.children.length > MAX_LINES) output.removeChild(output.firstChild);
+  $('lineCount').textContent = renderedLines + ' LINES';
+  output.scrollTop = output.scrollHeight;
+}
+function banner(){
+ print('╔══════════════════════════════════════════╗','cmd');
+ print('║  HACKER TERMINAL X  //  SECURE CONSOLE  ║','cmd');
+ print('╚══════════════════════════════════════════╝','cmd');
+ print('ブラウザ内ターミナルを起動しました。help でコマンド一覧を表示。','info');
+ print('実データとデモ結果は明確に区別して表示されます。','info');
+ print('──────────────────────────────────────────','info');
+}
+function validDomain(value){
+ if(!value || value.length>253 || value.includes('://') || value.includes('/') || value.includes('@') || value.includes(' ')) return false;
+ const d=value.endsWith('.')?value.slice(0,-1):value;
+ if(!d || d.length>253) return false;
+ const labels=d.split('.');
+ return labels.length>=2 && labels.every(x=>x.length>=1 && x.length<=63 && /^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(x)) && /^[a-zA-Z]{2,63}$/.test(labels[labels.length-1]);
+}
+function validIPv4(s){
+ const p=s.split('.');
+ return p.length===4 && p.every(x=>/^\d{1,3}$/.test(x) && Number(x)>=0 && Number(x)<=255);
+}
+function validIPv6(s){
+ if(!s.includes(':') || !/^[0-9a-fA-F:.]+$/.test(s)) return false;
+ if((s.match(/::/g)||[]).length>1) return false;
+ let v=s;
+ if(v.includes('.')){
+   const idx=v.lastIndexOf(':'); const ipv4=v.slice(idx+1);
+   if(!validIPv4(ipv4)) return false;
+   const nums=ipv4.split('.').map(Number);
+   const hex=((nums[0]<<8)|nums[1]).toString(16)+':'+(((nums[2]<<8)|nums[3]).toString(16));
+   v=v.slice(0,idx+1)+hex;
+ }
+ if(v.includes('::')){
+   const parts=v.split('::');
+   const left=parts[0]?parts[0].split(':'):[];
+   const right=parts[1]?parts[1].split(':'):[];
+   return left.every(x=>/^[0-9a-fA-F]{1,4}$/.test(x)) && right.every(x=>/^[0-9a-fA-F]{1,4}$/.test(x)) && left.length+right.length<8;
+ }
+ const parts=v.split(':');
+ return parts.length===8 && parts.every(x=>/^[0-9a-fA-F]{1,4}$/.test(x));
+}
+function ipKind(s){
+ if(validIPv4(s)){
+  const p=s.split('.').map(Number);
+  if(p[0]===10 || p[0]===127 || (p[0]===192&&p[1]===168) || (p[0]===172&&p[1]>=16&&p[1]<=31) || (p[0]===169&&p[1]===254) || p[0]===0) return 'プライベート / 特殊用途の可能性';
+  return '形式上のIPv4アドレス（公開到達性は未確認）';
+ }
+ if(validIPv6(s)) return '形式上のIPv6アドレス（公開到達性は未確認）';
+ return null;
+}
+function showHelp(){
+ print('AVAILABLE COMMANDS','cmd');
+ [
+  'help                         コマンド一覧',
+  'ip <IPv4/IPv6>               IP形式を検証',
+  'dns <domain>                 DNS A / AAAA / MX / TXT / NS を照会',
+  'whois <domain>               外部WHOIS検索ページを開く',
+  'domain <domain>              ドメイン形式を検証',
+  'sysinfo                      ブラウザ・画面情報',
+  'scan                         架空システムの防御デモ',
+  'history                      このページでのコマンド履歴',
+  'date                         端末の現在日時',
+  'calc <expression>            四則演算（例: calc (12+4)*3）',
+  'analyze <text>               文字列の簡易分析',
+  'clear                        出力を消去',
+  'banner                       起動画面を再表示',
+  'about                        このツールについて'
+ ].forEach(x=>print(x,'good'));
+ print('例: dns example.com   /   ip 8.8.8.8   /   calc 12*8','info');
+}
+function runSysinfo(){
+ print('SYSTEM INFO / ブラウザが公開する範囲','cmd');
+ const nav=navigator, scr=window.screen;
+ const rows=[
+  ['User agent',nav.userAgent||'取得不可'],
+  ['Language',nav.language||'取得不可'],
+  ['Languages',(nav.languages||[]).join(', ')||'取得不可'],
+  ['Platform',nav.platform||'非公開 / 取得不可'],
+  ['Online flag',nav.onLine?'online（接続先の到達性は未確認）':'offline（またはブラウザがofflineと判断）'],
+  ['Cookies enabled',String(nav.cookieEnabled)],
+  ['Logical CPU cores',nav.hardwareConcurrency?String(nav.hardwareConcurrency):'非公開 / 取得不可'],
+  ['Device memory',nav.deviceMemory?nav.deviceMemory+' GB（概算値）':'非公開 / 取得不可'],
+  ['Screen',scr.width+' × '+scr.height],
+  ['Available screen',scr.availWidth+' × '+scr.availHeight],
+  ['Color depth',scr.colorDepth+' bit'],
+  ['Viewport',window.innerWidth+' × '+window.innerHeight],
+  ['Timezone',Intl.DateTimeFormat().resolvedOptions().timeZone||'取得不可'],
+  ['Local time',new Date().toLocaleString()]
+ ];
+ rows.forEach(r=>print(r[0]+': '+r[1],'good'));
+ print('IPアドレス・正確な位置・端末内ファイル・Wi-Fiパスワードはこの情報から取得できません。','warn');
+}
+async function dnsLookup(domain){
+ if(!validDomain(domain)){print('エラー: 有効なドメイン名を指定してください（例: dns example.com）。','error');return}
+ print('DNS LOOKUP / '+domain,'cmd');
+ print('公開DNS over HTTPSへ問い合わせ中…','info');
+ const types=[['A',1],['AAAA',28],['MX',15],['TXT',16],['NS',2]];
+ const endpoint='https://cloudflare-dns.com/dns-query?name='+encodeURIComponent(domain)+'&type=';
+ const results=await Promise.all(types.map(async item=>{
+  try{
+   const controller=new AbortController();
+   const timer=setTimeout(()=>controller.abort(),7000);
+   const res=await fetch(endpoint+item[1],{headers:{'accept':'application/dns-json'},signal:controller.signal,cache:'no-store'});
+   clearTimeout(timer);
+   if(!res.ok) throw new Error('HTTP '+res.status);
+   const data=await res.json();
+   return {name:item[0],data};
+  }catch(e){return {name:item[0],error:e&&e.name==='AbortError'?'タイムアウト':(e.message||'通信エラー')}}
+ }));
+ let successes=0;
+ for(const r of results){
+  if(r.error){print(r.name+': 取得失敗 — '+r.error,'warn');continue}
+  const d=r.data; successes++;
+  print(r.name+' / status '+d.Status+(d.Status===0?' (NOERROR)':d.Status===3?' (NXDOMAIN)':''),'good');
+  const answers=(d.Answer||[]).filter(a=>a.type===({A:1,AAAA:28,MX:15,TXT:16,NS:2}[r.name]));
+  if(answers.length) answers.forEach(a=>print('  TTL '+a.TTL+'  '+a.data,'good'));
+  else if(d.Status===0) print('  該当する回答レコードなし','info');
+  else if(d.Status===3) print('  ドメインが存在しない可能性があります（DNS応答）','warn');
+  if(d.Comment) print('  '+d.Comment,'info');
+ }
+ if(successes) print('照会完了。これはDNS応答であり、サーバーの安全性や稼働状況を示すものではありません。','info');
+ else print('DNS照会に失敗しました。通信制限、ネットワーク、DNSサービスの状態を確認してください。','error');
+}
+function whois(domain){
+ if(!validDomain(domain)){print('エラー: ドメインを指定してください（例: whois example.com）。','error');return}
+ const url='https://lookup.icann.org/en/lookup?name='+encodeURIComponent(domain);
+ print('WHOIS / 登録情報検索ページを開きます: '+domain,'cmd');
+ print('登録情報はドメイン種別やプライバシー設定によって表示されない場合があります。','info');
+ const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='ICANN Lookupを開く: '+domain;output.appendChild(a);
+ print('リンクをタップしてください。外部ページであり、このツール内で登録情報を取得したわけではありません。','info');
+}
+function simulateScan(){
+ print('SIMULATION MODE / 架空環境のみ','cmd');
+ print('対象: training-node-07 (架空)  | 外部ホストへの通信: なし','warn');
+ const events=[
+  '[DEMO] ローカル演習ノードを初期化',
+  '[DEMO] 架空ログ 120 件を読み込み',
+  '[DEMO] 異常ログイン試行パターンを検出',
+  '[DEMO] 防御ルール「rate-limit」適用（シミュレーション）',
+  '[DEMO] 不審なリクエスト 8 件を仮想ブロック',
+  '[DEMO] 演習終了: 防御スコア 92 / 100（デモ値）'
+ ];
+ events.forEach((e,i)=>setTimeout(()=>print(e,i===2?'warn':i===5?'cmd':'good'),i*260));
+ print('重要: 上記は演出用の架空結果です。実際の端末・ネットワーク・サーバーをスキャンしていません。','warn');
+}
+function calc(expr){
+ if(!expr || expr.length>80 || !/^[\d+\-*/().\s%]+$/.test(expr)){print('使用例: calc (12+4)*3  ※数字と + - * / % ( ) のみ','error');return}
+ try{
+  const tokens=expr.match(/(?:\d+(?:\.\d*)?|\.\d+)|[()+\-*/%]/g)||[];
+  if(tokens.join('').replace(/\s/g,'')!==expr.replace(/\s/g,'')){print('式を解釈できません。','error');return}
+  let i=0;
+  function factor(){const t=tokens[i++];if(t==='+')return factor();if(t==='-')return -factor();if(t==='('){const v=add();if(tokens[i++]!==')')throw Error();return v}if(t!==undefined&&/^(\d+\.?\d*|\.\d+)$/.test(t))return Number(t);throw Error()}
+  function mul(){let v=factor();while(['*','/','%'].includes(tokens[i])){const op=tokens[i++],b=factor();if((op==='/'||op==='%')&&b===0)throw Error();v=op==='*'?v*b:op==='/'?v/b:v%b}return v}
+  function add(){let v=mul();while(tokens[i]==='+'||tokens[i]==='-'){const op=tokens[i++],b=mul();v=op==='+'?v+b:v-b}return v}
+  const val=add();if(i!==tokens.length||!Number.isFinite(val))throw Error();
+  print(expr+' = '+val,'good');
+ }catch(e){print('計算できません。式を確認してください。','error')}
+}
+function analyze(text){
+ if(!text){print('使用例: analyze hello-world-123','error');return}
+ const chars=[...text],freq={};
+ chars.forEach(c=>freq[c]=(freq[c]||0)+1);
+ const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([c,n])=>(c===' '?'␠':c)+' × '+n);
+ print('TEXT ANALYSIS / 入力された文字列のみを分析','cmd');
+ print('文字数: '+chars.length,'good');
+ print('UTF-16コード単位数: '+text.length,'good');
+ print('空白数: '+(text.match(/\s/g)||[]).length,'good');
+ print('数字数: '+(text.match(/\d/g)||[]).length,'good');
+ print('英字数: '+(text.match(/[a-z]/gi)||[]).length,'good');
+ print('記号数（英数字・空白以外）: '+(chars.filter(c=>!/[a-z0-9\s]/i.test(c)).length),'good');
+ print('頻出文字: '+(sorted.join(' / ')||'なし'),'info');
+ print('この分析は文字列の統計のみで、マルウェア判定や安全性判定ではありません。','warn');
+}
+async function execute(raw){
+ const trimmed=raw.trim();
+ if(!trimmed)return;
+ history.push(trimmed);historyCursor=history.length;
+ print('root@htx:~$ '+trimmed,'cmd');
+ const split=trimmed.match(/^(\S+)(?:\s+([\s\S]*))?$/);
+ const cmd=split[1].toLowerCase(),arg=(split[2]||'').trim();
+ switch(cmd){
+ case 'help':showHelp();break;
+ case 'clear':output.textContent='';renderedLines=0;$('lineCount').textContent='0 LINES';break;
+ case 'banner':banner();break;
+ case 'about':
+  print('HACKER TERMINAL X は静的なブラウザ用ツールです。','good');
+  print('実行環境: ブラウザ / 外部有料APIなし / アカウント不要。','good');
+  print('DNS照会はCloudflareの公開DNS over HTTPSへ通信します。','info');
+  print('スキャンは架空演習のみ。実ネットワークのポートスキャン機能はありません。','info');break;
+ case 'sysinfo':runSysinfo();break;
+ case 'date':print(new Date().toString(),'good');break;
+ case 'history':
+  if(!history.length)print('履歴はありません。','info');
+  else history.forEach((h,i)=>print((i+1)+': '+h,'good'));break;
+ case 'ip':
+  if(!arg){print('使用例: ip 8.8.8.8','error');break}
+  const kind=ipKind(arg);
+  if(kind){print('形式チェック: OK — '+arg,'good');print(kind,'info');print('このコマンドは外部へのIP照会・位置特定を行っていません。','warn')}
+  else print('形式チェック: NG — 有効なIPv4 / IPv6形式ではありません。','error');
+  break;
+ case 'domain':
+  if(validDomain(arg)){print('ドメイン形式: OK — '+arg,'good');print('DNS登録・所有権・サイト稼働は未確認です。','info')}
+  else print('ドメイン形式: NG — 例: domain example.com','error');
+  break;
+ case 'dns':await dnsLookup(arg);break;
+ case 'whois':whois(arg);break;
+ case 'scan':simulateScan();break;
+ case 'calc':calc(arg);break;
+ case 'analyze':analyze(arg);break;
+ default:print('不明なコマンド: '+cmd+'  | help で一覧を確認','error');
+ }
+}
+form.addEventListener('submit',async e=>{
+ e.preventDefault();
+ const value=input.value;
+ input.value='';
+ await execute(value);
+});
+input.addEventListener('keydown',e=>{
+ if(e.key==='ArrowUp'){e.preventDefault();if(historyCursor>0){historyCursor--;input.value=history[historyCursor]||''}}
+ if(e.key==='ArrowDown'){e.preventDefault();if(historyCursor<history.length-1){historyCursor++;input.value=history[historyCursor]||''}else{historyCursor=history.length;input.value=''}}
+});
+document.querySelectorAll('[data-cmd]').forEach(btn=>btn.addEventListener('click',()=>{input.value=btn.dataset.cmd;input.focus();form.requestSubmit()}));
+function tick(){const d=new Date();$('clock').textContent='LOCAL TIME '+d.toLocaleTimeString('ja-JP',{hour12:false});}
+tick();setInterval(tick,1000);banner();input.focus();
+})();
+</script>
+</body>
+</html>
